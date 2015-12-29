@@ -55,6 +55,26 @@ sub convert {
             push @outputs, '```';
             next;
         }
+        if ($in_table_block) {
+            if ( $line !~ /\A\|\|/) {
+                undef $in_table_block;
+            } else {
+                $line =~ s/\|\|/\|/g;
+                push @outputs, $line;
+                next;
+            }
+        }
+        if ($line =~ m/\A\|\|.*\|\|\z/) {
+            $in_table_block = 1;
+            my $c = $line;
+            $c = $c =~ s/\|\|//g;
+            my $header = join ' --- ', ("|") x $c;
+
+            $line =~ s/\|\|/\|/g;
+            push @outputs, $line;
+            push @outputs, $header;
+            next;
+        }
 
         # コメント削除
         next if $line =~ m{\A//.+\z};
@@ -70,20 +90,20 @@ sub convert {
 
 
         # 箇条書き
-        $line =~ s/\A[*]{3}/        -/;
-        $line =~ s/\A[*]{2}/    -/;
-        $line =~ s/\A[*]/-/;
+        $line =~ s/\A[*]{3} ?/        - /;
+        $line =~ s/\A[*]{2} ?/    - /;
+        $line =~ s/\A[*] ?/- /;
 
-        $line =~ s/\A#{3}/        1./;
-        $line =~ s/\A#{2}/    1./;
-        $line =~ s/\A#/1./;
+        $line =~ s/\A#{3} ?/        1. /;
+        $line =~ s/\A#{2} ?/    1. /;
+        $line =~ s/\A# ?/1. /;
 
         # 見出し
-        $line =~ s/\A!{5}/#####/;
-        $line =~ s/\A!{4}/####/;
-        $line =~ s/\A!{3}/###/;
-        $line =~ s/\A!{2}/##/;
-        $line =~ s/\A!/#/;
+        $line =~ s/\A!{5} ?/##### /;
+        $line =~ s/\A!{4} ?/#### /;
+        $line =~ s/\A!{3} ?/### /;
+        $line =~ s/\A!{2} ?/## /;
+        $line =~ s/\A! ?/# /;
 
         # 強調
         $line =~ s/'''(.+)'''/**$1**/g;
